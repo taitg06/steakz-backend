@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(CUSTOMER)
+  branchId      Int?      // For staff members (CHEF, CASHIER) assigned to a branch
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  posts    Post[]    @relation("UserPosts")
+  comments Comment[] @relation("UserComments")
+  reviews  Review[]  @relation("UserReviews")
+  reservations Reservation[] @relation("CustomerReservations")
+  managedBranch Branch?  @relation("BranchManager")
+  assignedBranch Branch? @relation("BranchStaff", fields: [branchId], references: [id])
+  cashierOrders Order[] @relation("CashierOrders")
+  customerOrders Order[] @relation("CustomerOrders")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  authorId  Int
+  author    User     @relation("UserPosts", fields: [authorId], references: [id])
+  comments  Comment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userName  String?
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  Int?
+  author    User?    @relation("UserComments", fields: [authorId], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+  HEADQUARTER_MANAGER
+  BRANCH_MANAGER
+  CASHIER
+  CHEF
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  userId    Int
+  user      User     @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Branch {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String
+  phone     String
+  managerId Int?      @unique
+  manager   User?     @relation("BranchManager", fields: [managerId], references: [id])
+  staff     User[]    @relation("BranchStaff")
+  orders    Order[]   @relation("BranchOrders")
+  reservations Reservation[] @relation("BranchReservations")
+  contactMessages ContactMessage[] @relation("BranchContactMessages")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  inventory MenuItem[]
+}
+
+model MenuItem {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Float
+  description String
+  quantity    Int
+  branchId    Int
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  branchId      Int
+  branch        Branch      @relation("BranchOrders", fields: [branchId], references: [id])
+  cashierId     Int?
+  cashier       User?       @relation("CashierOrders", fields: [cashierId], references: [id])
+  customerId    Int?
+  customer      User?       @relation("CustomerOrders", fields: [customerId], references: [id])
+  customerName  String?
+  totalAmount   Float
+  paymentMethod String      @default("CASH")
+  status        String      @default("COMPLETED")
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId  Int
+  menuItem    MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity    Int
+  price       Float
+  createdAt   DateTime @default(now())
+}
+
+model Reservation {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String
+  phone         String
+  date          String
+  time          String
+  guests        Int
+  branchId      Int?
+  branch        Branch?  @relation("BranchReservations", fields: [branchId], references: [id])
+  customerId    Int?
+  customer      User?    @relation("CustomerReservations", fields: [customerId], references: [id])
+  status        String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  branchId  Int?
+  branch    Branch?  @relation("BranchContactMessages", fields: [branchId], references: [id])
+  status    String   @default("UNREAD") // UNREAD, READ, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

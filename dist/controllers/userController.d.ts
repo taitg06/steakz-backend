@@ -1,0 +1,14 @@
+import { Request, Response } from 'express';
+export declare const getAllUsers: (_req: Request, res: Response) => Promise<void>;
+export declare const getUserById: (req: Request, res: Response) => Promise<void>;
+export declare const adminCreateUser: (req: Request, res: Response) => Promise<void>;
+export declare const adminUpdateUser: (req: Request, res: Response) => Promise<void>;
+export declare const adminChangeRole: (req: Request, res: Response) => Promise<void>;
+export declare const adminDeleteUser: (req: Request, res: Response) => Promise<void>;
+export declare const updateUserRole: (req: Request, res: Response) => Promise<void>;
+export declare const customerEndpoint: (_req: Request, res: Response) => void;
+export declare const adminEndpoint: (_req: Request, res: Response) => void;
+export declare const managerEndpoint: (_req: Request, res: Response) => void;
+export declare const cashierEndpoint: (_req: Request, res: Response) => void;
+export declare const headquarterEndpoint: (_req: Request, res: Response) => void;
+export declare const chefEndpoint: (_req: Request, res: Response) => void;
