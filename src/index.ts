@@ -41,6 +41,13 @@ app.get('/', (_req: Request, res: Response) => {
     res.send('Welcome to the homepage!');
 });
 
+app.get('/users', async (_req, res) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
+});
+
+
+
 // API routes
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
