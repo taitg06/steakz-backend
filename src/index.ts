@@ -25,6 +25,9 @@ const app = express();
 const prisma = new PrismaClient();
 
 // Allow frontend origins during development. If you deploy, set a stricter origin.
+
+
+
 const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3002'
