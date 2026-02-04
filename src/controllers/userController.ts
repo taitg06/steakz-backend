@@ -12,9 +12,40 @@ interface AuthRequest extends Request {
 }
 
 // Get all users (paginated)
-export const getAllUsers = async (_req: Request, res: Response): Promise<void> => {
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    const currentUser = (req as any).user;
+    
+    // Determine if we need to filter by branch
+    let whereClause: any = {};
+    
+    if (currentUser?.role === 'BRANCH_MANAGER') {
+      // Branch managers can only see staff from their branch
+      const managerBranch = await prisma.branch.findUnique({
+        where: { managerId: currentUser.id }
+      });
+      
+      if (!managerBranch) {
+        res.json({ users: [] });
+        return;
+      }
+      
+      whereClause.branchId = managerBranch.id;
+    } else if (currentUser?.role === 'CHEF' || currentUser?.role === 'CASHIER') {
+      // Staff can only see users from their own branch
+      const staffUser = await prisma.user.findUnique({
+        where: { id: currentUser.id },
+        select: { branchId: true }
+      });
+      
+      if (staffUser?.branchId) {
+        whereClause.branchId = staffUser.branchId;
+      }
+    }
+    // ADMIN, HEADQUARTER_MANAGER, and CUSTOMER can see all users
+    
     const users = await prisma.user.findMany({
+      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
       select: { 
         id: true, 
         name: true, 

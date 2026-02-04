@@ -365,6 +365,7 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
   try {
     const currentUser = (req as any).user;
     const { orderId } = req.params;
+    const { branchId } = req.body;
 
     // Find the order
     const order = await prisma.order.findUnique({
@@ -401,10 +402,28 @@ export const confirmPayment = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Validate branch if provided
+    let paymentBranchId = order.branchId;
+    if (branchId) {
+      const branch = await prisma.branch.findUnique({
+        where: { id: branchId }
+      });
+
+      if (!branch) {
+        res.status(404).json({ message: 'Selected branch not found' });
+        return;
+      }
+      paymentBranchId = branchId;
+    }
+
     // Update order status to PENDING (waiting for cashier confirmation)
+    // Also update branchId if a different branch was selected for payment
     const updatedOrder = await prisma.order.update({
       where: { id: parseInt(orderId) },
-      data: { status: 'PENDING' },
+      data: { 
+        status: 'PENDING',
+        branchId: paymentBranchId
+      },
       include: {
         items: {
           include: {

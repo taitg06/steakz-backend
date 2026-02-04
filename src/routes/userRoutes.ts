@@ -28,16 +28,16 @@ router.put('/change-password', authenticateToken, changePassword);  // Change ow
 router.get('/', authenticateToken, getAllUsers);                // List users based on role
 router.get('/:id', authenticateToken, getUserById);            // View user details and posts
 
-// Admin user management routes
-router.post('/', authenticateToken, authorizeRole(['ADMIN']), adminCreateUser);         // Create new user
-router.put('/:id/assign-branch', authenticateToken, authorizeRole(['ADMIN']), assignStaffToBranch); // Assign staff to branch
-router.delete('/:id', authenticateToken, authorizeRole(['ADMIN']), adminDeleteUser);     // Delete user
+// Admin user management routes (ADMIN and HEADQUARTER_MANAGER can manage users)
+router.post('/', authenticateToken, authorizeRole(['ADMIN', 'HEADQUARTER_MANAGER']), adminCreateUser);         // Create new user
+router.put('/:id/assign-branch', authenticateToken, authorizeRole(['ADMIN', 'HEADQUARTER_MANAGER']), assignStaffToBranch); // Assign staff to branch
+router.delete('/:id', authenticateToken, authorizeRole(['ADMIN', 'HEADQUARTER_MANAGER']), adminDeleteUser);     // Delete user
 
 // Update user role (admin and HQ manager can change roles, but HQ manager has restrictions)
 router.put('/:id/role', authenticateToken, authorizeRole(['ADMIN', 'HEADQUARTER_MANAGER']), updateUserRole);
 
-// Update user details (admin only)
-router.put('/:id', authenticateToken, authorizeRole(['ADMIN']), adminUpdateUser);       // Update user details
+// Update user details (admin and HQ manager)
+router.put('/:id', authenticateToken, authorizeRole(['ADMIN', 'HEADQUARTER_MANAGER']), adminUpdateUser);       // Update user details
 
 // Example protected endpoints for each role
 router.get('/example/customer', authenticateToken, authorizeRole(['CUSTOMER']), customerEndpoint);

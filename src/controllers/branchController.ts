@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { createMenuItemsForBranch } from '../utils/seedMenu';
 
 export const getBranches = async (_req: Request, res: Response): Promise<void> => {
   try {
@@ -39,7 +40,14 @@ export const getPublicBranches = async (_req: Request, res: Response): Promise<v
 
 export const createBranch = async (req: Request, res: Response): Promise<void> => {
   try {
+    const currentUser = (req as any).user;
     const { name, address, phone, managerId } = req.body;
+    
+    // Only ADMIN and HEADQUARTER_MANAGER can create branches
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'HEADQUARTER_MANAGER') {
+      res.status(403).json({ message: 'You do not have permission to create branches' });
+      return;
+    }
     
     // Validate required fields
     if (!name || !address || !phone) {
@@ -91,6 +99,10 @@ export const createBranch = async (req: Request, res: Response): Promise<void> =
         }
       }
     });
+    
+    // Create default menu items for the new branch
+    await createMenuItemsForBranch(branch.id);
+    
     res.status(201).json(branch);
   } catch (error) {
     console.error('Error creating branch:', error);
@@ -100,8 +112,15 @@ export const createBranch = async (req: Request, res: Response): Promise<void> =
 
 export const updateBranch = async (req: Request, res: Response): Promise<void> => {
   try {
+    const currentUser = (req as any).user;
     const { id } = req.params;
     const { name, address, phone, managerId } = req.body;
+    
+    // Only ADMIN and HEADQUARTER_MANAGER can update branches
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'HEADQUARTER_MANAGER') {
+      res.status(403).json({ message: 'You do not have permission to update branches' });
+      return;
+    }
     
     // Check if branch exists
     const existingBranch = await prisma.branch.findUnique({
@@ -170,7 +189,15 @@ export const updateBranch = async (req: Request, res: Response): Promise<void> =
 
 export const deleteBranch = async (req: Request, res: Response): Promise<void> => {
   try {
+    const currentUser = (req as any).user;
     const { id } = req.params;
+    
+    // Only ADMIN and HEADQUARTER_MANAGER can delete branches
+    if (currentUser.role !== 'ADMIN' && currentUser.role !== 'HEADQUARTER_MANAGER') {
+      res.status(403).json({ message: 'You do not have permission to delete branches' });
+      return;
+    }
+    
     await prisma.branch.delete({
       where: { id: Number(id) }
     });
